@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztOE23wuY0kcXE3IWTx378v8in5Y9JtSGEBwbVTjs0xIJUkhB2PQLqVu9SXSLkFVUoyw/exec";
 
 // BASE DE DATOS DE PREGUNTAS
 const bancoDePreguntas: any = {
@@ -109,13 +110,40 @@ export default function Home() {
     setPantalla("juego");
   };
 
-  const responder = (mePasa: boolean) => {
+const responder = (mePasa: boolean) => {
+    const nuevoPuntaje = mePasa ? puntaje + 1 : puntaje;
     if (mePasa) {
-      setPuntaje(puntaje + 1);
+      setPuntaje(nuevoPuntaje);
     }
+
     if (indiceActual < 4) {
       setIndiceActual(indiceActual + 1);
     } else {
+      // Calculamos el mensaje final
+      let resultadoTexto = "";
+      if (nuevoPuntaje === 0) {
+        resultadoTexto = "Sos parte de ese 1% de la población que logra mantener su día a día frente al ajuste.";
+      } else if (nuevoPuntaje >= 1 && nuevoPuntaje <= 2) {
+        resultadoTexto = "Venís esquivando los golpes, pero el ajuste te pisa los talones: es hora de cambiar el rumbo.";
+      } else {
+        resultadoTexto = "No te falta esfuerzo: debemos ponerle un freno a Milei.";
+      }
+
+      // Enviamos a Google Sheets en segundo plano
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: datos.nombre,
+          edad: datos.edad,
+          telefono: datos.telefono,
+          email: datos.email,
+          puntaje: nuevoPuntaje,
+          resultado: resultadoTexto,
+        }),
+      }).catch((err) => console.error("Error guardando datos:", err));
+
       setPantalla("resultado");
     }
   };
